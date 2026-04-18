@@ -1,28 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-
-const MONO = "'Fira Code', 'SF Mono', 'Cascadia Code', monospace";
-const SANS = "'DM Sans', 'Helvetica Neue', sans-serif";
-
-const COLORS = {
-  bg: "#0a0e17",
-  surface: "#111827",
-  surfaceLight: "#1a2332",
-  border: "#1e2d3d",
-  borderActive: "#2a4a6b",
-  text: "#c9d1d9",
-  textDim: "#5a6a7a",
-  textBright: "#e6edf3",
-  accent: "#00d4ff",
-  accentDim: "rgba(0,212,255,0.15)",
-  green: "#00ff88",
-  greenDim: "rgba(0,255,136,0.12)",
-  amber: "#ffb800",
-  amberDim: "rgba(255,184,0,0.12)",
-  red: "#ff4757",
-  redDim: "rgba(255,71,87,0.12)",
-  purple: "#a78bfa",
-  purpleDim: "rgba(167,139,250,0.12)",
-};
+import { COLORS, MONO, SANS } from "./theme.js";
+import DisclaimerBanner from "./DisclaimerBanner.jsx";
+import ArchitectureModal from "./ArchitectureModal.jsx";
 
 const genId = () => Math.random().toString(36).slice(2, 8);
 const randomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -110,9 +89,18 @@ const ArchLayer = ({ label, sublabel, color, items, active }) => (
 );
 
 export default function XRPL_OS() {
-  const [agents, setAgents] = useState([]);
+  const [archOpen, setArchOpen] = useState(false);
+  const [agents, setAgents] = useState(() =>
+    AGENT_NAMES.slice(0, 6).map((name) => ({
+      id: genId(), name, state: randomFrom(AGENT_STATES),
+      did: "did:xrpl:" + genId(), memory: randomBetween(12, 256),
+      txCount: randomBetween(0, 500), uptime: randomBetween(100, 86400),
+    })),
+  );
   const [transactions, setTransactions] = useState([]);
-  const [stats, setStats] = useState({ tps: 0, agents: 0, settled: 0, ledgerIndex: 0, wsStatus: "CONNECTING" });
+  const [stats, setStats] = useState({
+    tps: 0, agents: 6, settled: 0, ledgerIndex: 0, wsStatus: "CONNECTING",
+  });
   const [activeLayer, setActiveLayer] = useState(0);
   const [terminalInput, setTerminalInput] = useState("");
   const [terminalHistory, setTerminalHistory] = useState([
@@ -123,6 +111,7 @@ export default function XRPL_OS() {
   const txRef = useRef(null);
   const termRef = useRef(null);
   const wsRef = useRef(null);
+  const connectWSRef = useRef(null);
   const txCountRef = useRef(0);
   const ledgerTxCounts = useRef([]);
   const reconnectTimer = useRef(null);
@@ -216,34 +205,35 @@ export default function XRPL_OS() {
             else if (t === "TrustSet") setActiveLayer(2);
             else setActiveLayer(3);
           }
-        } catch (e) {}
+        } catch { /* non-JSON or unexpected payload */ }
       };
 
       ws.onclose = () => {
         setStats(prev => ({ ...prev, wsStatus: "DISCONNECTED" }));
         addTermLine("WebSocket disconnected — reconnecting in 3s...", "error");
-        reconnectTimer.current = setTimeout(connectWS, 3000);
+        reconnectTimer.current = setTimeout(() => connectWSRef.current?.(), 3000);
       };
       ws.onerror = () => {
         setStats(prev => ({ ...prev, wsStatus: "ERROR" }));
       };
     } catch (e) {
       setStats(prev => ({ ...prev, wsStatus: "FAILED" }));
-      addTermLine("Connection failed: " + e.message, "error");
-      reconnectTimer.current = setTimeout(connectWS, 5000);
+      const msg = e instanceof Error ? e.message : String(e);
+      addTermLine("Connection failed: " + msg, "error");
+      reconnectTimer.current = setTimeout(() => connectWSRef.current?.(), 5000);
     }
   }, [addTermLine, parseTx]);
 
   useEffect(() => {
-    const initialAgents = AGENT_NAMES.slice(0, 6).map(name => ({
-      id: genId(), name, state: randomFrom(AGENT_STATES),
-      did: "did:xrpl:" + genId(), memory: randomBetween(12, 256),
-      txCount: randomBetween(0, 500), uptime: randomBetween(100, 86400),
-    }));
-    setAgents(initialAgents);
-    setStats(prev => ({ ...prev, agents: initialAgents.length }));
-    connectWS();
+    connectWSRef.current = connectWS;
+  }, [connectWS]);
+
+  useEffect(() => {
+    const startId = setTimeout(() => {
+      connectWS();
+    }, 0);
     return () => {
+      clearTimeout(startId);
       if (wsRef.current) wsRef.current.close();
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
     };
@@ -272,14 +262,15 @@ export default function XRPL_OS() {
       case "help":
         output = [
           { type: "output", text: "Available commands:" },
-          { type: "output", text: "  ps          — list running agents" },
-          { type: "output", text: "  spawn <n>   — spawn a new agent" },
-          { type: "output", text: "  kill <id>   — terminate an agent" },
-          { type: "output", text: "  stats       — system statistics" },
-          { type: "output", text: "  ledger      — current ledger info" },
-          { type: "output", text: "  layers      — show OS architecture" },
-          { type: "output", text: "  reconnect   — reconnect WebSocket" },
-          { type: "output", text: "  clear       — clear terminal" },
+          { type: "output", text: "  ps            — list running agents" },
+          { type: "output", text: "  spawn <n>     — spawn a new agent" },
+          { type: "output", text: "  kill <id>     — terminate an agent" },
+          { type: "output", text: "  stats         — system statistics" },
+          { type: "output", text: "  ledger        — current ledger info" },
+          { type: "output", text: "  layers        — show layer ASCII (terminal)" },
+          { type: "output", text: "  arch / architecture — system architecture (modal)" },
+          { type: "output", text: "  reconnect     — reconnect WebSocket" },
+          { type: "output", text: "  clear         — clear terminal" },
         ]; break;
       case "ps":
         output = [{ type: "output", text: "PID    NAME                STATE      DID" }];
@@ -327,6 +318,11 @@ export default function XRPL_OS() {
           { type: "output", text: "│  L0  XRPL (Kernel of Value)     [LIVE]  │" },
           { type: "output", text: "└─────────────────────────────────────────┘" },
         ]; break;
+      case "arch":
+      case "architecture":
+        setArchOpen(true);
+        output = [{ type: "system", text: "Open system architecture (modal) — also use header button" }];
+        break;
       case "reconnect":
         if (wsRef.current) wsRef.current.close();
         setTimeout(connectWS, 500);
@@ -350,6 +346,7 @@ export default function XRPL_OS() {
         ::-webkit-scrollbar-track{background:transparent}
         ::-webkit-scrollbar-thumb{background:${COLORS.border};border-radius:2px}
       `}</style>
+      <DisclaimerBanner />
 
       {/* Header */}
       <div style={{
@@ -357,6 +354,7 @@ export default function XRPL_OS() {
         padding: "12px 20px", borderBottom: "1px solid " + COLORS.border,
         background: "linear-gradient(180deg, " + COLORS.surfaceLight + " 0%, " + COLORS.surface + " 100%)",
         position: "relative", overflow: "hidden",
+        gap: 16, flexWrap: "wrap",
       }}>
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,212,255,0.015) 2px, rgba(0,212,255,0.015) 4px)", pointerEvents: "none" }} />
         <div style={{ display: "flex", alignItems: "center", gap: 12, zIndex: 1 }}>
@@ -380,7 +378,20 @@ export default function XRPL_OS() {
             </div>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 20, alignItems: "center", zIndex: 1 }}>
+        <div style={{ display: "flex", flex: 1, minWidth: 0, alignItems: "center", justifyContent: "flex-end", gap: 12, zIndex: 1, flexWrap: "wrap" }}>
+          <button
+            type="button"
+            onClick={() => setArchOpen(true)}
+            style={{
+              background: COLORS.accentDim, border: "1px solid " + COLORS.accent + "55",
+              color: COLORS.accent, fontSize: 10, fontFamily: MONO, fontWeight: 600, padding: "5px 12px",
+              borderRadius: 4, cursor: "pointer", whiteSpace: "nowrap",
+            }}
+          >
+            SYSTEM ARCHITECTURE
+          </button>
+        </div>
+        <div style={{ display: "flex", gap: 20, alignItems: "center", zIndex: 1, flexWrap: "wrap" }}>
           {[
             { label: "TPS", value: "~" + stats.tps, color: "accent" },
             { label: "AGENTS", value: agents.length, color: "green" },
@@ -394,6 +405,8 @@ export default function XRPL_OS() {
           ))}
         </div>
       </div>
+
+      <ArchitectureModal open={archOpen} onClose={() => setArchOpen(false)} />
 
       {/* Main Grid */}
       <div style={{

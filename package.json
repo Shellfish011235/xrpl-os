@@ -1,7 +1,9 @@
 {
   "name": "xrpl-os",
+  "description": "Non-custodial intelligence and operations layer for the XRP Ledger (read-only mainnet demo + roadmap UX).",
   "private": true,
   "version": "0.0.0",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",

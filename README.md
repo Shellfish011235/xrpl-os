@@ -1,16 +1,83 @@
-# React + Vite
+# XRPL-OS
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**A non-custodial intelligence and operations layer for the [XRP Ledger](https://xrpl.org/).**
 
-Currently, two official plugins are available:
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)  
+**Repository:** [github.com/Shellfish011235/xrpl-os](https://github.com/Shellfish011235/xrpl-os)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+This project provides **observational tooling and a roadmap-shaped UX** for analytics, future wallet coordination, and permissioned automation — with **no custody of user keys** in the current app.
 
-## React Compiler
+| Principle | In this build |
+|-----------|----------------|
+| **No custody** | The app does not store or request private keys. |
+| **No signing** | No in-app transaction signing. |
+| **No moving user funds** | Read-only mainnet WebSocket; simulated agents / upper layers in the UI. |
+| **Execution boundary** | Any future value movement is designed to go **only** through the user’s own wallet and explicit signature — not hidden backend execution. See [docs/STRATEGY.md](./docs/STRATEGY.md). |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+*Nothing in this repository is financial, legal, or tax advice.*
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Features (directional)
+
+- **Real-time** public mainnet **ledger and transaction** observation (WebSocket)  
+- **Process / architecture** view — L0 public data + illustrated L1–L3 layers  
+- **In-app** compliance-oriented **disclaimer** and **system architecture** explainer (modal + [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md))  
+- **Terminal**-style command surface (demo)  
+- **Planned / roadmap:** read-only wallet linking, personal analytics, AI copilots, permissioned agents with human approval and limits  
+
+---
+
+## Quick start
+
+**Requirements:** [Node.js](https://nodejs.org/) 20+ (or current LTS).
+
+```bash
+git clone https://github.com/Shellfish011235/xrpl-os.git
+cd xrpl-os
+npm install
+npm run dev
+```
+
+Open the URL shown in the terminal (e.g. `http://localhost:5173`).
+
+**Production build:** `npm run build` then `npm run preview` to test the `dist` output.
+
+---
+
+## Documentation
+
+| Document | Purpose |
+|----------|---------|
+| [docs/STRATEGY.md](./docs/STRATEGY.md) | Product positioning, risk zones, roadmap phases, governance principles |
+| [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | Data flow, trust boundary, mermaid diagram, layer semantics |
+
+---
+
+## Project structure (high level)
+
+```
+src/
+  theme.js              # Shared palette / fonts
+  XRPL_OS.jsx           # Main shell UI + WebSocket
+  DisclaimerBanner.jsx  # Observational / non-custody notice
+  ArchitectureModal.jsx # In-app architecture + compliance posture
+  App.jsx
+  main.jsx
+docs/
+  STRATEGY.md
+  ARCHITECTURE.md
+```
+
+---
+
+## License
+
+[MIT](./LICENSE) — see `LICENSE` in the repository root.
+
+---
+
+## Contact
+
+**Maintainer:** [@Shellfish011235](https://github.com/Shellfish011235)  
+Issues and PRs welcome for **read-only, non-custodial, transparent** improvements. Proposals that introduce custody, execution-as-a-service, or fund pooling should be discussed with **legal counsel** before implementation.
