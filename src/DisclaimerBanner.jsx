@@ -23,8 +23,9 @@ export default function DisclaimerBanner() {
         NOTICE
       </span>
       <span>
-        XRPL-OS is observational software tooling. It does not custody keys, sign transactions, or move funds.
-        Users control all wallets and signatures. Nothing here is financial, legal, or tax advice. See
+        XRPL-OS is observational, read-only software tooling. Phase 2 adds public address watch + heuristic analytics. It
+        does not custody keys, sign transactions, or move funds. You paste only public r-addresses; there is no secret
+        input surface in this app. Nothing here is financial, legal, or tax advice. See
         {" "}
         <a
           href="https://github.com/Shellfish011235/xrpl-os/blob/main/docs/STRATEGY.md"

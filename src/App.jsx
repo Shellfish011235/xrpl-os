@@ -1,5 +1,5 @@
-import XRPL_OS from "./XRPL_OS.jsx";
+import XRPLShell from "./shell/XRPLShell.jsx";
 
 export default function App() {
-  return <XRPL_OS />;
+  return <XRPLShell />;
 }
